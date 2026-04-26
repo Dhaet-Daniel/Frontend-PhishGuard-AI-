@@ -23,6 +23,18 @@ const toArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
 const toPlainObject = (value) =>
   value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 
+const normalizeValidationIssues = (detail) => {
+  if (!Array.isArray(detail)) {
+    return [];
+  }
+
+  return detail.map((item) => ({
+    path: Array.isArray(item?.loc) ? item.loc : [],
+    message: item?.msg || 'Invalid value.',
+    type: item?.type || null,
+  }));
+};
+
 const formatErrorDetail = (detail) => {
   if (Array.isArray(detail)) {
     return detail
@@ -44,7 +56,13 @@ const formatErrorDetail = (detail) => {
 const handleResponse = async (response) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    if (response.status === 422) throw new Error(formatErrorDetail(errorData.detail || 'Validation Error'));
+    if (response.status === 422) {
+      const issues = normalizeValidationIssues(errorData.detail);
+      const error = new Error(formatErrorDetail(errorData.detail || 'Validation Error'));
+      error.status = 422;
+      error.validationIssues = issues;
+      throw error;
+    }
     if (response.status === 429) throw new Error('Rate limit exceeded. Please try again later.');
     throw new Error(formatErrorDetail(errorData.detail));
   }
