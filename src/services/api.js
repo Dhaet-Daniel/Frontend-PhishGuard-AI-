@@ -196,3 +196,11 @@ export const getResultById = async (id) => {
   const data = await handleResponse(response);
   return normalizeAnalysisResult(data);
 };
+export const submitLogAction = async (logData) => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/log`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(logData),
+  });
+  return handleResponse(response);
+};

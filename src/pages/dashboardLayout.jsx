@@ -7,9 +7,15 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true); // on desktop always visible
   const navigate = useNavigate();
 
+  const userRole = localStorage.getItem('userRole') || 'user';
+  const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
+  const userInitials = userEmail.split('@')[0].substring(0, 2).toUpperCase();
+
   const logout = () => {
-    localStorage.removeItem('loggedIn');
-    toast.success('Logged out');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    toast.success('Logged out successfully');
     navigate('/');
   };
 
@@ -37,10 +43,10 @@ export default function DashboardLayout() {
           </nav>
           <div className="px-4 py-6 border-t border-gray-800">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">JD</div>
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">{userInitials}</div>
               <div className="ml-3">
-                <p className="text-sm font-medium">John Doe</p>
-                <p className="text-xs text-gray-400">john.doe@example.com</p>
+                <p className="text-sm font-medium">{userRole === 'admin' ? 'Admin User' : 'Standard User'}</p>
+                <p className="text-xs text-gray-400">{userEmail}</p>
               </div>
             </div>
             <button onClick={logout} className="mt-4 w-full px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white">Logout</button>
