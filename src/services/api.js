@@ -5,6 +5,8 @@ export const getBaseUrl = () => {
   return savedUrl.replace(/\/+$/, '');
 };
 
+const BASE_URL = getBaseUrl();
+
 const toNumber = (value) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null;
@@ -53,7 +55,7 @@ const formatErrorDetail = (detail) => {
   return 'Internal Server Error';
 };
 
-const handleResponse = async (response) => {
+async function handleResponse(response) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     if (response.status === 422) {
@@ -63,10 +65,22 @@ const handleResponse = async (response) => {
       error.validationIssues = issues;
       throw error;
     }
-    if (response.status === 429) throw new Error('Rate limit exceeded. Please try again later.');
-    throw new Error(formatErrorDetail(errorData.detail));
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+    throw new Error(formatErrorDetail(errorData.detail || 'Request failed'));
   }
+
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
+}
+
+const authHeaders = () => {
+  const token = localStorage.getItem('authToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 const normalizeBreakdown = (value) => {
@@ -108,11 +122,7 @@ const normalizeAnalysisResult = (value) => {
     trust_signals: toArray(result.trust_signals),
     recommended_actions: toArray(result.recommended_actions),
     analysis_breakdown: normalizeBreakdown(result.analysis_breakdown),
-    sender:
-      result.sender ||
-      result.sender_info?.email ||
-      result.email ||
-      '',
+    sender: result.sender || result.sender_info?.email || result.email || '',
     subject: result.subject || '',
   };
 };
@@ -165,42 +175,67 @@ const normalizeHistoryResponse = (value) => {
   };
 };
 
-export const scanEmail = async (emailData) => {
-  const response = await fetch(`${getBaseUrl()}/api/v1/predict`, {
+export const loginUser = async (email, password) => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(emailData)
+    body: JSON.stringify({ email, password }),
+  });
+
+  return handleResponse(response);
+};
+
+export const getApi = (url) =>
+  fetch(`${getBaseUrl()}/api/v1${url}`, { headers: authHeaders() }).then(handleResponse);
+
+export const postApi = (url, data) =>
+  fetch(`${getBaseUrl()}/api/v1${url}`, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).then(handleResponse);
+
+export const putApi = (url, data) =>
+  fetch(`${getBaseUrl()}/api/v1${url}`, {
+    method: 'PUT',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).then(handleResponse);
+
+export const deleteApi = (url) =>
+  fetch(`${getBaseUrl()}/api/v1${url}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  }).then(handleResponse);
+
+export const scanEmail = async (emailData) => {
+  const response = await fetch(`${BASE_URL}/api/v1/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(emailData),
   });
   const data = await handleResponse(response);
   return normalizeAnalysisResult(data);
 };
 
 export const batchScanEmails = async (emailsArray) => {
-  const response = await fetch(`${getBaseUrl()}/api/v1/batch-predict`, {
+  const response = await fetch(`${BASE_URL}/api/v1/batch-predict`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(emailsArray)
+    body: JSON.stringify(emailsArray),
   });
   const data = await handleResponse(response);
   return normalizeBatchResults(data);
 };
 
 export const getRecentResults = async (limit = 20) => {
-  const response = await fetch(`${getBaseUrl()}/api/v1/results/recent?limit=${limit}`);
+  const response = await fetch(`${BASE_URL}/api/v1/results/recent?limit=${limit}`);
   const data = await handleResponse(response);
   return normalizeHistoryResponse(data);
 };
 
 export const getResultById = async (id) => {
-  const response = await fetch(`${getBaseUrl()}/api/v1/results/${id}`);
+  const response = await fetch(`${BASE_URL}/api/v1/results/${id}`);
   const data = await handleResponse(response);
   return normalizeAnalysisResult(data);
-};
-export const submitLogAction = async (logData) => {
-  const response = await fetch(`${getBaseUrl()}/api/v1/log`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(logData),
-  });
-  return handleResponse(response);
 };

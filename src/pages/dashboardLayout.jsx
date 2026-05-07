@@ -28,16 +28,16 @@ export default function DashboardLayout() {
             <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">PhishGuard AI</Link>
           </div>
           <nav className="flex-1 px-4 py-6 space-y-2">
-            <Link to="/app" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+            <Link to="/scanner" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-search mr-3"></i> Scan Email
             </Link>
-            <Link to="/app/history" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+            <Link to="/scanner/history" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-history mr-3"></i> History
             </Link>
-            <Link to="/app/batch" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+            <Link to="/scanner/batch" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-layer-group mr-3"></i> Batch Scan
             </Link>
-            <Link to="/app/settings" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+            <Link to="/scanner/settings" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-cog mr-3"></i> Settings
             </Link>
           </nav>

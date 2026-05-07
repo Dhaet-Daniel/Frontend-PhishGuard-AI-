@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { submitLogAction } from '../services/api';
+import { loginUser } from '../services/api';
 
 // ---- Helper: smooth scroll to section on same page ----
 function scrollToSection(id) {
@@ -218,7 +218,6 @@ export default function Landing() {
   const closeTrial = () => setTrialOpen(false);
   const openAuth = (mode = 'login') => {
     setAuthMode(mode);
-    if (mode === 'login') setAuthRole('admin');
     setAuthOpen(true);
   };
   const closeAuth = () => setAuthOpen(false);
@@ -228,13 +227,7 @@ export default function Landing() {
   const [authPassword, setAuthPassword] = useState('');
   const [authConfirm, setAuthConfirm] = useState('');
   const [authErrors, setAuthErrors] = useState({});
-  const [authRole, setAuthRole] = useState('admin');
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [userPassword, setUserPassword] = useState('');
-  const [logErrors, setLogErrors] = useState({});
-  const [logLoading, setLogLoading] = useState({ admin: false, user: false });
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const resetAuth = () => {
     setAuthEmail('');
@@ -259,49 +252,24 @@ export default function Landing() {
     return Object.keys(errs).length === 0;
   };
 
-  const validateLogForm = (role) => {
-    const errs = {};
-    const email = role === 'admin' ? adminEmail : userEmail;
-    const password = role === 'admin' ? adminPassword : userPassword;
-
-    if (!email.trim()) errs[`${role}Email`] = 'Enter your email address.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs[`${role}Email`] = 'Enter a valid email.';
-    if (!password.trim()) errs[`${role}Password`] = 'Enter your password.';
-
-    setLogErrors((prev) => ({ ...prev, ...errs }));
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleLogSubmit = async (e, role) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (!validateLogForm(role)) return;
+    if (!validateAuth()) return;
 
-    const payload = {
-      role,
-      email: role === 'admin' ? adminEmail.trim() : userEmail.trim(),
-      password: role === 'admin' ? adminPassword : userPassword,
-      source: 'landing-page',
-    };
-
-    setLogLoading((prev) => ({ ...prev, [role]: true }));
+    setLoginLoading(true);
     try {
-      const response = await submitLogAction(payload);
-      const token = response?.token || `token_${role}_${Date.now()}`;
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userEmail', payload.email);
-      toast.success(`Logged in as ${role === 'admin' ? 'Admin' : 'User'} successfully. Connected to PhishGuard system.`);
-      navigate('/app');
-    } catch {
-      // Fallback to local auth when backend login endpoint is unavailable
-      const fallbackToken = `local-${role}-${Date.now()}`;
-      localStorage.setItem('authToken', fallbackToken);
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userEmail', payload.email);
-      toast.success(`Logged in locally as ${role === 'admin' ? 'Admin' : 'User'}. Dashboard access enabled.`);
-      navigate('/app');
+      const response = await loginUser(authEmail.trim(), authPassword);
+      localStorage.setItem('authToken', response.access_token);
+      localStorage.setItem('userRole', response.role);
+      localStorage.setItem('userEmail', authEmail.trim());
+      toast.success(`Logged in as ${response.role === 'admin' ? 'Admin' : 'User'}`);
+      closeAuth();
+      navigate(response.role === 'admin' ? '/admin' : '/scanner');
+    } catch (error) {
+      setAuthErrors((prev) => ({ ...prev, general: error.message || 'Login failed' }));
+      toast.error(error.message || 'Login failed');
     } finally {
-      setLogLoading((prev) => ({ ...prev, [role]: false }));
+      setLoginLoading(false);
     }
   };
 
@@ -1031,65 +999,56 @@ export default function Landing() {
           <div className="modal-panel relative w-full max-w-md rounded-[1.75rem] border border-gray-700 bg-[#111827] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <button onClick={closeAuth} className="close-modal absolute right-4 top-4 text-gray-400 hover:text-gray-200"><i className="fas fa-times"></i></button>
             <h3 className="text-2xl font-bold text-white">
-              {authMode === 'login'
-                ? `Log In as ${authRole === 'admin' ? 'Admin' : 'User'}`
-                : 'Sign Up'}
+              {authMode === 'login' ? 'Log In' : 'Sign Up'}
             </h3>
             <p className="mt-2 text-sm text-gray-400">
               {authMode === 'login'
-                ? 'Choose Admin or User access and sign in to the shared PhishGuard system.'
+                ? 'Sign in with your PhishGuard account to continue.'
                 : 'Create an account to get started.'}
             </p>
             {authMode === 'login' ? (
-              <>
-                <div className="mt-4 inline-flex rounded-full bg-gray-900 p-1">
-                  {['admin', 'user'].map((role) => (
-                    <button
-                      type="button"
-                      key={role}
-                      onClick={() => setAuthRole(role)}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                        authRole === role ? 'bg-white text-[#111827]' : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {role === 'admin' ? 'Admin' : 'User'}
-                    </button>
-                  ))}
-                </div>
-                <form onSubmit={(e) => handleLogSubmit(e, authRole)} className="mt-6 space-y-4" noValidate>
+              <form onSubmit={handleLogin} className="mt-6 space-y-4" noValidate>
+                  {authErrors.general && (
+                    <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                      {authErrors.general}
+                    </div>
+                  )}
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">
-                      {authRole === 'admin' ? 'Admin Email address' : 'User Email address'}
-                    </label>
+                    <label className="block text-sm text-gray-400 mb-2">Email address</label>
                     <input
                       type="email"
-                      value={authRole === 'admin' ? adminEmail : userEmail}
-                      onChange={(e) => authRole === 'admin' ? setAdminEmail(e.target.value) : setUserEmail(e.target.value)}
+                      value={authEmail}
+                      onChange={(e) => {
+                        setAuthEmail(e.target.value);
+                        setAuthErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
+                      }}
                       className="w-full rounded-2xl border border-gray-700 bg-[#0f1117] px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    {logErrors[`${authRole}Email`] && <p className="input-error mt-1 text-xs text-red-400">{logErrors[`${authRole}Email`]}</p>}
+                    {authErrors.email && <p className="input-error mt-1 text-xs text-red-400">{authErrors.email}</p>}
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Password</label>
                     <input
                       type="password"
-                      value={authRole === 'admin' ? adminPassword : userPassword}
-                      onChange={(e) => authRole === 'admin' ? setAdminPassword(e.target.value) : setUserPassword(e.target.value)}
+                      value={authPassword}
+                      onChange={(e) => {
+                        setAuthPassword(e.target.value);
+                        setAuthErrors((prev) => ({ ...prev, password: undefined, general: undefined }));
+                      }}
                       className="w-full rounded-2xl border border-gray-700 bg-[#0f1117] px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    {logErrors[`${authRole}Password`] && <p className="input-error mt-1 text-xs text-red-400">{logErrors[`${authRole}Password`]}</p>}
+                    {authErrors.password && <p className="input-error mt-1 text-xs text-red-400">{authErrors.password}</p>}
                   </div>
                   <div className="flex justify-between items-center">
                     <a href="#" className="text-sm text-blue-400 hover:text-blue-300">Forgot password?</a>
                   </div>
                   <div className="flex flex-col gap-3 pt-3">
                     <button type="submit" className="btn-primary w-full">
-                      {logLoading[authRole] ? 'Connecting…' : `Login as ${authRole === 'admin' ? 'Admin' : 'User'}`}
+                      {loginLoading ? 'Connecting…' : 'Log In'}
                     </button>
                     <button type="button" onClick={closeAuth} className="btn-secondary w-full">Cancel</button>
                   </div>
                 </form>
-              </>
             ) : (
               <form onSubmit={handleAuthSubmit} className="mt-6 space-y-4" noValidate>
                 <div>
