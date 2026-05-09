@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { loginUser } from '../services/api';
+import { loginUser, submitSignupRequest } from '../services/api';
 
 // ---- Helper: smooth scroll to section on same page ----
 function scrollToSection(id) {
@@ -227,6 +227,8 @@ export default function Landing() {
   const [authPassword, setAuthPassword] = useState('');
   const [authConfirm, setAuthConfirm] = useState('');
   const [authErrors, setAuthErrors] = useState({});
+  const [signupName, setSignupName] = useState('');
+  const [signupOrg, setSignupOrg] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
   const resetAuth = () => {
@@ -234,6 +236,8 @@ export default function Landing() {
     setAuthPassword('');
     setAuthConfirm('');
     setAuthErrors({});
+    setSignupName('');
+    setSignupOrg('');
   };
 
   const switchAuthMode = () => setAuthMode((prev) => (prev === 'login' ? 'signup' : 'login'));
@@ -273,16 +277,21 @@ export default function Landing() {
     }
   };
 
-  const handleAuthSubmit = async (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
     if (!validateAuth()) return;
-    // Simulated signup (replace with real API later)
-    localStorage.setItem('signedUp', 'true');
-    toast.success('Account created successfully! Please log in to access the system.');
-    closeAuth();
-    resetAuth();
-    // After signup, open login modal
-    setTimeout(() => openAuth('login'), 1000);
+    if (!signupName.trim()) {
+      toast.error('Enter your full name.');
+      return;
+    }
+    try {
+      await submitSignupRequest(signupName.trim(), authEmail.trim(), authPassword, signupOrg.trim());
+      toast.success('Your access request has been submitted. Please wait for admin approval.');
+      closeAuth();
+      resetAuth();
+    } catch (error) {
+      toast.error(error.message || 'Signup request failed');
+    }
   };
 
   // ---- Demo / trial form handling ----
@@ -1050,7 +1059,26 @@ export default function Landing() {
                   </div>
                 </form>
             ) : (
-              <form onSubmit={handleAuthSubmit} className="mt-6 space-y-4" noValidate>
+              <form onSubmit={handleSignupSubmit} className="mt-6 space-y-4" noValidate>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={signupName}
+                    onChange={e => setSignupName(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-700 bg-[#0f1117] px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Organization (optional)</label>
+                  <input
+                    type="text"
+                    value={signupOrg}
+                    onChange={e => setSignupOrg(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-700 bg-[#0f1117] px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Email address</label>
                   <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="w-full rounded-2xl border border-gray-700 bg-[#0f1117] px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />

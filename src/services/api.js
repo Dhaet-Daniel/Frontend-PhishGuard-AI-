@@ -239,3 +239,13 @@ export const getResultById = async (id) => {
   const data = await handleResponse(response);
   return normalizeAnalysisResult(data);
 };
+
+export const submitSignupRequest = async (full_name, email, password, organization) => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/auth/signup-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ full_name, email, password, organization }),
+  });
+
+  return handleResponse(response);
+};

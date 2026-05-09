@@ -33,6 +33,9 @@ export default function AdminLayout() {
             <Link to="/admin/feedback" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-comments mr-3"></i> Feedback
             </Link>
+            <Link to="/admin/requests" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+              <i className="fas fa-user-check mr-3"></i> Requests
+            </Link>
           </nav>
           <div className="px-4 py-6 border-t border-gray-800">
             <button onClick={logout} className="w-full px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white">Logout</button>

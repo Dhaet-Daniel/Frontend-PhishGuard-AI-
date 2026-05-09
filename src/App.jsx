@@ -13,6 +13,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminResults from './pages/AdminResults';
 import AdminFeedback from './pages/AdminFeedback';
+import AdminRequests from './pages/AdminRequests';
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="results" element={<AdminResults />} />
             <Route path="feedback" element={<AdminFeedback />} />
+            <Route path="requests" element={<AdminRequests />} />
           </Route>
 
           <Route path="/app" element={<Navigate to="/scanner" replace />} />
