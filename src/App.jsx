@@ -14,6 +14,8 @@ import AdminUsers from './pages/AdminUsers';
 import AdminResults from './pages/AdminResults';
 import AdminFeedback from './pages/AdminFeedback';
 import AdminRequests from './pages/AdminRequests';
+import AdminDomains from './pages/AdminDomains';
+import AdminFeatureFlags from './pages/AdminFeatureFlags';
 
 export default function App() {
   return (
@@ -45,6 +47,8 @@ export default function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="results" element={<AdminResults />} />
             <Route path="feedback" element={<AdminFeedback />} />
+            <Route path="domains" element={<AdminDomains />} />
+            <Route path="features" element={<AdminFeatureFlags />} />
             <Route path="requests" element={<AdminRequests />} />
           </Route>
 

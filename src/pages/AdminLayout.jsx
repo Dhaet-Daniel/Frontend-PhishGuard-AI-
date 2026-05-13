@@ -33,6 +33,12 @@ export default function AdminLayout() {
             <Link to="/admin/feedback" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-comments mr-3"></i> Feedback
             </Link>
+            <Link to="/admin/domains" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+              <i className="fas fa-globe mr-3"></i> Trusted Domains
+            </Link>
+            <Link to="/admin/features" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+              <i className="fas fa-microchip mr-3"></i> Feature Flags
+            </Link>
             <Link to="/admin/requests" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-user-check mr-3"></i> Requests
             </Link>

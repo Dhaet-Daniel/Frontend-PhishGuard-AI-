@@ -211,7 +211,7 @@ export const deleteApi = (url) =>
 export const scanEmail = async (emailData) => {
   const response = await fetch(`${BASE_URL}/api/v1/predict`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(emailData),
   });
   const data = await handleResponse(response);
@@ -221,7 +221,7 @@ export const scanEmail = async (emailData) => {
 export const batchScanEmails = async (emailsArray) => {
   const response = await fetch(`${BASE_URL}/api/v1/batch-predict`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(emailsArray),
   });
   const data = await handleResponse(response);
