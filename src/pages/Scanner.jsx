@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { scanEmail } from '../services/api';
 import ResultPanel from '../components/ResultPanel';
+import CollapsibleSection from '../components/CollapsibleSection';
 import {
   AttachmentsEditor,
   EmailModeSelector,
@@ -32,6 +33,7 @@ export default function Scanner() {
   const [fieldErrors, setFieldErrors] = useState(createEmptyValidationState(createEmailForm()));
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   const resetErrors = (nextForm) => {
     setFieldErrors(createEmptyValidationState(nextForm));
@@ -195,42 +197,43 @@ export default function Scanner() {
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-400">
-                      Sender Email *
+                      Sender Email <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="email"
                       className={sharedInputClassName}
                       value={formData.sender}
                       onChange={(event) => updateField('sender', event.target.value)}
+                      placeholder="sender@example.com"
                     />
                     <FieldError message={fieldErrors.sender} />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-400">
-                      Subject *
+                      Subject <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
                       className={sharedInputClassName}
                       value={formData.subject}
                       onChange={(event) => updateField('subject', event.target.value)}
+                      placeholder="Email subject line"
                     />
                     <FieldError message={fieldErrors.subject} />
                   </div>
                 </div>
 
-                <SenderDetailsFields email={formData} errors={fieldErrors} onChange={updateField} />
-
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-400">
-                      Email Body (Text)
+                      Email Body (Text) <span className="text-red-400">*</span>
                     </label>
                     <textarea
                       rows="6"
                       className={sharedTextAreaClassName}
                       value={formData.body_text}
                       onChange={(event) => updateField('body_text', event.target.value)}
+                      placeholder="Plain text email body"
                     ></textarea>
                     <FieldError message={fieldErrors.body_text} />
                   </div>
@@ -243,43 +246,87 @@ export default function Scanner() {
                       className={sharedTextAreaClassName}
                       value={formData.body_html}
                       onChange={(event) => updateField('body_html', event.target.value)}
+                      placeholder="HTML email body"
                     ></textarea>
                     <FieldError message={fieldErrors.body_html} />
                   </div>
                 </div>
               </div>
 
-              <HeadersEditor
-                headers={formData.headers}
-                errors={fieldErrors.headers}
-                onChange={(index, field, value) => updateCollectionItem('headers', index, field, value)}
-                onAdd={() => addCollectionItem('headers', createHeader)}
-                onRemove={(index) => removeCollectionItem('headers', index)}
-                title="Header Signals"
-                description="Model message headers as key-value pairs instead of raw JSON so the payload matches the backend shape."
-              />
+              <div className="flex items-center gap-3 px-5 py-3 bg-slate-900/30 rounded-lg border border-slate-700">
+                <input
+                  type="checkbox"
+                  id="showAdvanced"
+                  checked={showAdvancedFields}
+                  onChange={(e) => setShowAdvancedFields(e.target.checked)}
+                  className="w-4 h-4 rounded cursor-pointer"
+                />
+                <label htmlFor="showAdvanced" className="text-sm font-medium text-slate-300 cursor-pointer">
+                  I have additional details (sender info, headers, links, attachments)
+                </label>
+              </div>
 
-              <LinksEditor
-                links={formData.links}
-                errors={fieldErrors.links}
-                onChange={(index, field, value) => updateCollectionItem('links', index, field, value)}
-                onAdd={() => addCollectionItem('links', createLink)}
-                onRemove={(index) => removeCollectionItem('links', index)}
-                title="Detected or Embedded Links"
-                description="Add URLs the backend should inspect for redirect chains, TLD risk, and mismatch patterns."
-              />
+              {showAdvancedFields && (
+                <div className="space-y-4">
+                  <CollapsibleSection
+                    title="Sender Details"
+                    tooltip="Mismatched reply-to or return-path can indicate spoofing."
+                  >
+                    <SenderDetailsFields
+                      email={formData}
+                      errors={fieldErrors}
+                      onChange={updateField}
+                    />
+                  </CollapsibleSection>
 
-              <AttachmentsEditor
-                attachments={formData.attachments}
-                errors={fieldErrors.attachments}
-                onChange={(index, field, value) =>
-                  updateCollectionItem('attachments', index, field, value)
-                }
-                onAdd={() => addCollectionItem('attachments', createAttachment)}
-                onRemove={(index) => removeCollectionItem('attachments', index)}
-                title="Attachment Metadata"
-                description="Provide structured file indicators such as filename, MIME type, size, hashes, and extracted text."
-              />
+                  <CollapsibleSection
+                    title="Authentication Headers"
+                    tooltip="SPF/DKIM/DMARC results determine email trustworthiness."
+                  >
+                    <HeadersEditor
+                      headers={formData.headers}
+                      errors={fieldErrors.headers}
+                      onChange={(index, field, value) => updateCollectionItem('headers', index, field, value)}
+                      onAdd={() => addCollectionItem('headers', createHeader)}
+                      onRemove={(index) => removeCollectionItem('headers', index)}
+                      title=""
+                      description=""
+                    />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection
+                    title="Links & URLs"
+                    tooltip="Suspicious links, shorteners, and new domains increase risk."
+                  >
+                    <LinksEditor
+                      links={formData.links}
+                      errors={fieldErrors.links}
+                      onChange={(index, field, value) => updateCollectionItem('links', index, field, value)}
+                      onAdd={() => addCollectionItem('links', createLink)}
+                      onRemove={(index) => removeCollectionItem('links', index)}
+                      title=""
+                      description=""
+                    />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection
+                    title="Attachments"
+                    tooltip="Double extensions, macros, or password-protected files are common in phishing."
+                  >
+                    <AttachmentsEditor
+                      attachments={formData.attachments}
+                      errors={fieldErrors.attachments}
+                      onChange={(index, field, value) =>
+                        updateCollectionItem('attachments', index, field, value)
+                      }
+                      onAdd={() => addCollectionItem('attachments', createAttachment)}
+                      onRemove={(index) => removeCollectionItem('attachments', index)}
+                      title=""
+                      description=""
+                    />
+                  </CollapsibleSection>
+                </div>
+              )}
             </>
           )}
 

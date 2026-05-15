@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import ResultPanel from '../components/ResultPanel';
+import CollapsibleSection from '../components/CollapsibleSection';
 import {
   AttachmentsEditor,
   EmailModeSelector,
@@ -249,25 +250,14 @@ export default function BatchScanner() {
                     Pick the row mode first, then fill only the fields that mode requires.
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  {email.mode === EMAIL_INPUT_MODES.STRUCTURED && (
-                    <button
-                      type="button"
-                      onClick={() => updateEmail(index, 'showDetails', !email.showDetails)}
-                      className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-600"
-                    >
-                      {email.showDetails ? 'Hide Details' : 'Show Details'}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeEmail(index)}
-                    disabled={emails.length === 1}
-                    className="rounded-lg bg-red-600/80 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Remove
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => removeEmail(index)}
+                  disabled={emails.length === 1}
+                  className="rounded-lg bg-red-600/80 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Remove
+                </button>
               </div>
 
               <EmailModeSelector
@@ -330,25 +320,27 @@ export default function BatchScanner() {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <label className="mb-1 block text-sm font-medium text-slate-400">
-                          Sender Email *
+                          Sender Email <span className="text-red-400">*</span>
                         </label>
                         <input
                           type="email"
                           className={sharedInputClassName}
                           value={email.sender}
                           onChange={(event) => updateEmail(index, 'sender', event.target.value)}
+                          placeholder="sender@example.com"
                         />
                         <FieldError message={rowErrors[index]?.sender} />
                       </div>
                       <div>
                         <label className="mb-1 block text-sm font-medium text-slate-400">
-                          Subject *
+                          Subject <span className="text-red-400">*</span>
                         </label>
                         <input
                           type="text"
                           className={sharedInputClassName}
                           value={email.subject}
                           onChange={(event) => updateEmail(index, 'subject', event.target.value)}
+                          placeholder="Email subject line"
                         />
                         <FieldError message={rowErrors[index]?.subject} />
                       </div>
@@ -357,13 +349,14 @@ export default function BatchScanner() {
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                       <div>
                         <label className="mb-1 block text-sm font-medium text-slate-400">
-                          Body Text
+                          Body Text <span className="text-red-400">*</span>
                         </label>
                         <textarea
                           rows="5"
                           className={sharedTextAreaClassName}
                           value={email.body_text}
                           onChange={(event) => updateEmail(index, 'body_text', event.target.value)}
+                          placeholder="Plain text email body"
                         ></textarea>
                         <FieldError message={rowErrors[index]?.body_text} />
                       </div>
@@ -376,65 +369,91 @@ export default function BatchScanner() {
                           className={sharedTextAreaClassName}
                           value={email.body_html}
                           onChange={(event) => updateEmail(index, 'body_html', event.target.value)}
+                          placeholder="HTML email body"
                         ></textarea>
                         <FieldError message={rowErrors[index]?.body_html} />
                       </div>
                     </div>
                   </div>
 
+                  <div className="flex items-center gap-3 px-4 py-2 bg-slate-900/30 rounded-lg border border-slate-700">
+                    <input
+                      type="checkbox"
+                      id={`showAdvanced-${index}`}
+                      checked={email.showDetails}
+                      onChange={(e) => updateEmail(index, 'showDetails', e.target.checked)}
+                      className="w-4 h-4 rounded cursor-pointer"
+                    />
+                    <label htmlFor={`showAdvanced-${index}`} className="text-sm font-medium text-slate-300 cursor-pointer">
+                      I have additional details (sender info, headers, links, attachments)
+                    </label>
+                  </div>
+
                   {email.showDetails && (
                     <div className="space-y-4">
-                      <div className="rounded-xl border border-slate-700 bg-slate-950/40 p-4">
-                        <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-white">Sender Details</h3>
-                          <p className="text-sm text-slate-400">
-                            Optional sender metadata for alignment checks and analyst workflows.
-                          </p>
-                        </div>
+                      <CollapsibleSection
+                        title="Sender Details"
+                        tooltip="Mismatched reply-to or return-path can indicate spoofing."
+                      >
                         <SenderDetailsFields
                           email={email}
                           errors={rowErrors[index] || {}}
                           onChange={(field, value) => updateEmail(index, field, value)}
                         />
-                      </div>
+                      </CollapsibleSection>
 
-                      <HeadersEditor
-                        headers={email.headers}
-                        errors={rowErrors[index]?.headers}
-                        onChange={(itemIndex, field, value) =>
-                          updateCollectionItem(index, 'headers', itemIndex, field, value)
-                        }
-                        onAdd={() => addCollectionItem(index, 'headers', createHeader)}
-                        onRemove={(itemIndex) => removeCollectionItem(index, 'headers', itemIndex)}
-                        title="Header Signals"
-                        description="Repeatable key-value headers that mirror the backend schema."
-                      />
+                      <CollapsibleSection
+                        title="Authentication Headers"
+                        tooltip="SPF/DKIM/DMARC results determine email trustworthiness."
+                      >
+                        <HeadersEditor
+                          headers={email.headers}
+                          errors={rowErrors[index]?.headers}
+                          onChange={(itemIndex, field, value) =>
+                            updateCollectionItem(index, 'headers', itemIndex, field, value)
+                          }
+                          onAdd={() => addCollectionItem(index, 'headers', createHeader)}
+                          onRemove={(itemIndex) => removeCollectionItem(index, 'headers', itemIndex)}
+                          title=""
+                          description=""
+                        />
+                      </CollapsibleSection>
 
-                      <LinksEditor
-                        links={email.links}
-                        errors={rowErrors[index]?.links}
-                        onChange={(itemIndex, field, value) =>
-                          updateCollectionItem(index, 'links', itemIndex, field, value)
-                        }
-                        onAdd={() => addCollectionItem(index, 'links', createLink)}
-                        onRemove={(itemIndex) => removeCollectionItem(index, 'links', itemIndex)}
-                        title="Links"
-                        description="Optional URLs for per-message link analysis."
-                      />
+                      <CollapsibleSection
+                        title="Links & URLs"
+                        tooltip="Suspicious links, shorteners, and new domains increase risk."
+                      >
+                        <LinksEditor
+                          links={email.links}
+                          errors={rowErrors[index]?.links}
+                          onChange={(itemIndex, field, value) =>
+                            updateCollectionItem(index, 'links', itemIndex, field, value)
+                          }
+                          onAdd={() => addCollectionItem(index, 'links', createLink)}
+                          onRemove={(itemIndex) => removeCollectionItem(index, 'links', itemIndex)}
+                          title=""
+                          description=""
+                        />
+                      </CollapsibleSection>
 
-                      <AttachmentsEditor
-                        attachments={email.attachments}
-                        errors={rowErrors[index]?.attachments}
-                        onChange={(itemIndex, field, value) =>
-                          updateCollectionItem(index, 'attachments', itemIndex, field, value)
-                        }
-                        onAdd={() => addCollectionItem(index, 'attachments', createAttachment)}
-                        onRemove={(itemIndex) =>
-                          removeCollectionItem(index, 'attachments', itemIndex)
-                        }
+                      <CollapsibleSection
                         title="Attachments"
-                        description="Optional structured attachment metadata for this row."
-                      />
+                        tooltip="Double extensions, macros, or password-protected files are common in phishing."
+                      >
+                        <AttachmentsEditor
+                          attachments={email.attachments}
+                          errors={rowErrors[index]?.attachments}
+                          onChange={(itemIndex, field, value) =>
+                            updateCollectionItem(index, 'attachments', itemIndex, field, value)
+                          }
+                          onAdd={() => addCollectionItem(index, 'attachments', createAttachment)}
+                          onRemove={(itemIndex) =>
+                            removeCollectionItem(index, 'attachments', itemIndex)
+                          }
+                          title=""
+                          description=""
+                        />
+                      </CollapsibleSection>
                     </div>
                   )}
                 </>
