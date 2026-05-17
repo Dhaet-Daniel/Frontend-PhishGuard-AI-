@@ -39,6 +39,9 @@ export default function AdminLayout() {
             <Link to="/admin/features" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-microchip mr-3"></i> Feature Flags
             </Link>
+            <Link to="/admin/feature-requests" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
+              <i className="fas fa-flag mr-3"></i> Feature Requests
+            </Link>
             <Link to="/admin/requests" className="nav-item flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-800">
               <i className="fas fa-user-check mr-3"></i> Requests
             </Link>

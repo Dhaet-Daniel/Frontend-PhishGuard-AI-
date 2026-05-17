@@ -208,6 +208,49 @@ export const deleteApi = (url) =>
     headers: authHeaders(),
   }).then(handleResponse);
 
+// Feature request & per-user overrides
+
+export const requestFeature = async (featureName) => {
+  const token = localStorage.getItem('authToken');
+  const response = await fetch(`${getBaseUrl()}/api/v1/settings/feature-request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({ feature_name: featureName }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(errorData.detail || 'Request failed');
+  }
+
+  return response.json();
+};
+
+// Fetch per-user overrides (admin only)
+export const getUserFeatures = () => getApi('/admin/user-features');
+
+// Assign a feature to a specific user (admin only)
+export const assignUserFeature = (userEmail, featureName) =>
+  postApi('/admin/user-features', { user_email: userEmail, feature_name: featureName });
+
+// Remove a per-user override (admin only)
+export const removeUserFeature = (userEmail, featureName) =>
+  deleteApi(`/admin/user-features?user_email=${encodeURIComponent(userEmail)}&feature_name=${encodeURIComponent(featureName)}`);
+
+// Get effective features for the current user
+export const getMyFeatures = () => getApi('/settings/my-features');
+
+export const getFeatureRequests = () => getApi('/admin/feature-requests');
+
+export const resolveFeatureRequest = (requestId) =>
+  putApi(`/admin/feature-requests/${requestId}/resolve`);
+
+export const dismissFeatureRequest = (requestId) =>
+  putApi(`/admin/feature-requests/${requestId}/dismiss`);
+
 export const scanEmail = async (emailData) => {
   const response = await fetch(`${BASE_URL}/api/v1/predict`, {
     method: 'POST',

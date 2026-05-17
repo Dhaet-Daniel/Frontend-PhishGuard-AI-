@@ -16,6 +16,7 @@ import AdminFeedback from './pages/AdminFeedback';
 import AdminRequests from './pages/AdminRequests';
 import AdminDomains from './pages/AdminDomains';
 import AdminFeatureFlags from './pages/AdminFeatureFlags';
+import AdminFeatureRequests from './pages/AdminFeatureRequests';
 
 export default function App() {
   return (
@@ -27,32 +28,44 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<Pricing />} />
 
-          <Route path="/scanner" element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Scanner />} />
             <Route path="batch" element={<BatchScanner />} />
             <Route path="history" element={<History />} />
             <Route path="settings" element={<Settings />} />
           </Route>
 
-          <Route path="/admin" element={
-            <ProtectedRoute roleRequired="admin">
-              <AdminLayout />
-            </ProtectedRoute>
-          }>
+          <Route path="/scanner" element={<Navigate to="/app" replace />} />
+          <Route path="/scanner/batch" element={<Navigate to="/app/batch" replace />} />
+          <Route path="/scanner/history" element={<Navigate to="/app/history" replace />} />
+          <Route path="/scanner/settings" element={<Navigate to="/app/settings" replace />} />
+
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute roleRequired="admin">
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="results" element={<AdminResults />} />
             <Route path="feedback" element={<AdminFeedback />} />
             <Route path="domains" element={<AdminDomains />} />
             <Route path="features" element={<AdminFeatureFlags />} />
+            <Route path="feature-requests" element={<AdminFeatureRequests />} />
             <Route path="requests" element={<AdminRequests />} />
           </Route>
 
-          <Route path="/app" element={<Navigate to="/scanner" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>
